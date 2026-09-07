@@ -560,8 +560,24 @@ function renderFilesList(){
 const GEMINI_MODELS=['gemini-2.0-flash','gemini-2.5-flash','gemini-1.5-flash'];
 const GEN_BTN_HTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg> Generate Assessment';
 
+let geminiConfiguredCache=null;
+
 function getGeminiKey(){
   try{return String((window.__ENV&&(window.__ENV.GEMINI_API_KEY||window.__ENV.GOOGLE_API_KEY))||'').trim();}catch(e){return '';}
+}
+
+async function isGeminiConfigured(){
+  if(getGeminiKey())return true;
+  if(window.__ENV&&window.__ENV.GEMINI_CONFIGURED)return true;
+  if(geminiConfiguredCache!=null)return geminiConfiguredCache;
+  try{
+    const r=await fetch('/api/gemini',{cache:'no-store'});
+    const d=await r.json();
+    geminiConfiguredCache=!!d.configured;
+    return geminiConfiguredCache;
+  }catch(e){
+    return false;
+  }
 }
 
 function buildStudyPrompt(course,diff,n,wantMcq,wantFlash,hasMaterial){
@@ -605,38 +621,11 @@ function normalizeQuiz(parsed,wantMcq,wantFlash){
 }
 
 async function callGemini(parts){
-  const key=getGeminiKey();
-  if(!key)throw new Error('Add GEMINI_API_KEY to your .env file, then refresh the page.');
-  let lastErr=null;
-  for(const model of GEMINI_MODELS){
-    const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(key);
-    const payload={
-      systemInstruction:{parts:[{text:'You are an exam-prep tutor. Produce original assessment items and valid JSON only.'}]},
-      contents:[{role:'user',parts}],
-      generationConfig:{temperature:0.5,maxOutputTokens:8192,responseMimeType:'application/json'}
-    };
-    let res,data;
-    try{
-      res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      data=await res.json();
-    }catch(err){lastErr=err;continue;}
-    if(data.error){
-      const msg=data.error.message||'Gemini request failed';
-      lastErr=new Error(msg);
-      const low=msg.toLowerCase();
-      if(low.includes('api key')||low.includes('permission denied')||res.status===403||res.status===401)throw lastErr;
-      continue;
-    }
-    const cand=(data.candidates||[])[0];
-    const text=((cand&&cand.content&&cand.content.parts)||[]).map(p=>p.text||'').join('');
-    if(!text){
-      const block=(data.promptFeedback&&data.promptFeedback.blockReason)||(cand&&cand.finishReason);
-      lastErr=new Error(block?'Gemini blocked or stopped the response ('+block+'). Try different material or a shorter topic.':'Empty response from Gemini.');
-      continue;
-    }
-    return text;
-  }
-  throw lastErr||new Error('Gemini request failed');
+  const res=await fetch('/api/gemini',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({parts})});
+  let data={};
+  try{data=await res.json();}catch(e){}
+  if(data.text)return data.text;
+  throw new Error(data.error||'Gemini is not configured. Set GEMINI_API_KEY on Vercel (or in .env locally), then redeploy/refresh.');
 }
 
 async function generateStudyMaterial(){
@@ -645,7 +634,7 @@ async function generateStudyMaterial(){
   const diff=$('aiDiff').value;
   const count=parseInt($('aiCount').value,10)||10;
   if(!course){toast('Enter a course or topic name first');if($('aiCourse'))$('aiCourse').focus();return;}
-  if(!getGeminiKey()){toast('Add GEMINI_API_KEY to your .env file, then refresh');return;}
+  if(!(await isGeminiConfigured())){toast('Set GEMINI_API_KEY on Vercel (or in .env locally), then redeploy and refresh');return;}
 
   const readyFiles=uploadedFiles.filter(f=>f.status==='ready');
   const pasteText=(($('pasteText')&&$('pasteText').value)||'').trim();
@@ -699,7 +688,7 @@ async function generateStudyMaterial(){
   }catch(e){
     let userMsg=e.message||'Unknown error';
     if(/failed to fetch|networkerror|cors/i.test(userMsg)){
-      userMsg='Could not reach Google Gemini. Check your internet connection, API key restrictions, and that this page is open on a local server.';
+      userMsg='Could not reach Gemini. Check your connection, and that GEMINI_API_KEY is set on Vercel (then redeploy) or in .env locally.';
     }
     const errHtml='<div class="empty-card" style="padding:2rem;">'
       +'<p style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--tp);">Generation Failed</p>'
