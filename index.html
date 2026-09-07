@@ -8,403 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-:root{
-  /* Neutral blue/indigo palette for a cleaner, professional look */
-  --g50:#eef2ff;--g100:#e0e7ff;--g200:#c7d2fe;--g500:#4f46e5;--g600:#4338ca;--g700:#3730a3;--g800:#312e81;--g900:#1e293b;
-  --y100:#fef3c7;--y300:#fcd34d;--y400:#fbbf24;--y500:#f59e0b;--y600:#d97706;
-  --r100:#fee2e2;--r500:#ef4444;--r600:#dc2626;
-  --b100:#dbeafe;--b600:#2563eb;--b700:#1d4ed8;
-  --p100:#f3e8ff;--p600:#9333ea;
-  --surf:#fff;--surf2:#f8faf8;--bdr:#e2ebe2;
-  --tp:#0f1a0f;--ts:#4a6741;--tm:#8aab87;
-  --sh-sm:0 1px 4px rgba(15,26,15,.07);--sh-md:0 4px 18px rgba(15,26,15,.09);--sh-lg:0 14px 44px rgba(15,26,15,.14);
-  --r-sm:8px;--r-md:12px;--r-lg:18px;--r-xl:24px;
-  --f:'Plus Jakarta Sans',sans-serif;
-}
-.dm{--surf:#1a2e1a;--surf2:#1d321d;--bdr:#2a4a2a;--tp:#e8f5e3;--ts:#9dc998;--tm:#5a8a56;
-  --sh-sm:0 1px 4px rgba(0,0,0,.3);--sh-md:0 4px 18px rgba(0,0,0,.38);--sh-lg:0 14px 44px rgba(0,0,0,.5);}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:var(--f);background:var(--surf2);color:var(--tp);min-height:100vh;transition:background .3s,color .3s;overflow-x:hidden;}
-
-/* ── NAV ── */
-nav{position:sticky;top:0;z-index:300;background:var(--g800);padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 18px rgba(0,0,0,.2);}
-.dm nav{background:#091509;}
-.nav-logo{font-family:var(--f);font-size:20px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;letter-spacing:-.5px;flex-shrink:0;}
-.nav-logo span{color:var(--y400);}
-.logo-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--g500),var(--g700));display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid rgba(255,255,255,.2);}
-.nav-c{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-.nb{height:32px;padding:0 11px;border-radius:7px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-family:var(--f);font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap;}
-.nb:hover,.nb.act{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35);}
-.nb.yel{background:var(--y400);border-color:var(--y400);color:var(--g900);font-weight:700;}
-.nb.yel:hover{background:var(--y300);}
-.nb svg{width:13px;height:13px;flex-shrink:0;}
-.scale-wrap{display:flex;align-items:center;gap:6px;}
-.scale-lbl{font-size:10.5px;color:rgba(255,255,255,.65);white-space:nowrap;}
-.scale-sel{height:32px;padding:0 8px;border-radius:7px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;font-family:var(--f);font-size:11px;font-weight:700;cursor:pointer;outline:none;}
-.scale-sel option{background:#166534;color:#fff;}
-
-/* ── VIEWS ── */
-.view{display:none;}.view.active{display:block;}
-
-/* ── LAYOUT ── */
-.app-layout{display:grid;grid-template-columns:1fr 330px;max-width:1440px;margin:0 auto;min-height:calc(100vh - 60px);}
-.main-col{padding:1.6rem 1.6rem 2rem 2rem;}
-
-/* ── STUDENT CARD ── */
-.stu-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r-lg);padding:1rem 1.25rem;margin-bottom:1.1rem;box-shadow:var(--sh-sm);display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;}
-.stu-av{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--g600),var(--g900));display:flex;align-items:center;justify-content:center;font-family:var(--f);font-size:17px;font-weight:800;color:#fff;flex-shrink:0;align-self:flex-end;margin-bottom:2px;}
-.stu-fields{display:flex;gap:8px;flex:1;flex-wrap:wrap;align-items:flex-end;}
-.fg{display:flex;flex-direction:column;gap:3px;flex:1;min-width:130px;}
-.fl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--tm);}
-.fi{height:34px;padding:0 10px;border:1.5px solid var(--bdr);border-radius:var(--r-sm);background:var(--surf2);color:var(--tp);font-family:var(--f);font-size:12px;font-weight:500;outline:none;transition:border-color .2s;}
-.fi:focus{border-color:var(--g500);background:var(--surf);}
-.fi::placeholder{color:var(--tm);font-weight:400;}
-.fi-sel{height:34px;padding:0 8px;border:1.5px solid var(--bdr);border-radius:var(--r-sm);background:var(--surf2);color:var(--tp);font-family:var(--f);font-size:12px;font-weight:600;outline:none;cursor:pointer;}
-.fi-sel:focus{border-color:var(--g500);}
-.sbtn{height:34px;padding:0 14px;background:var(--g700);color:#fff;border:none;border-radius:var(--r-sm);font-family:var(--f);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;white-space:nowrap;}
-.sbtn:hover{background:var(--g600);}
-.sbtn.out{background:transparent;border:1.5px solid var(--bdr);color:var(--ts);}
-.sbtn.out:hover{border-color:var(--g500);color:var(--g700);background:var(--g50);}
-
-/* ── TOOLBAR ── */
-.toolbar{display:flex;gap:7px;align-items:center;margin-bottom:1rem;flex-wrap:wrap;}
-.srch-wrap{position:relative;flex:1;min-width:160px;}
-.srch-wrap input{width:100%;height:36px;padding:0 12px 0 36px;border:1.5px solid var(--bdr);border-radius:var(--r-md);background:var(--surf);color:var(--tp);font-family:var(--f);font-size:12px;outline:none;transition:border-color .2s;}
-.srch-wrap input:focus{border-color:var(--g500);}
-.srch-wrap input::placeholder{color:var(--tm);}
-.srch-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--tm);}
-.tbtn{display:flex;align-items:center;gap:6px;height:36px;padding:0 13px;border-radius:var(--r-sm);font-family:var(--f);font-size:11.5px;font-weight:600;cursor:pointer;transition:all .2s;border:none;white-space:nowrap;}
-.tbtn.green{background:var(--g700);color:#fff;}
-.tbtn.green:hover{background:var(--g600);}
-.tbtn.ghost{background:var(--surf);border:1.5px solid var(--bdr);color:var(--ts);}
-.tbtn.ghost:hover{border-color:var(--g500);color:var(--g700);}
-.tbtn svg{width:14px;height:14px;}
-
-/* ── SEMESTER CARD ── */
-.sem-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r-lg);margin-bottom:1rem;overflow:hidden;box-shadow:var(--sh-sm);transition:box-shadow .2s;animation:fadeUp .28s ease;}
-.sem-card:hover{box-shadow:var(--sh-md);}
-@keyframes fadeUp{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
-.sem-hdr{padding:.9rem 1.2rem;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,var(--g700),var(--g900));color:#fff;}
-.sem-l{display:flex;align-items:center;gap:9px;}
-.sem-badge{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-family:var(--f);font-weight:800;font-size:13px;flex-shrink:0;}
-.sem-name{font-family:var(--f);font-size:13.5px;font-weight:800;color:#fff;outline:none;cursor:text;min-width:40px;}
-.sem-name:focus{border-bottom:1.5px solid rgba(255,255,255,.4);}
-.sem-sub{display:flex;align-items:center;gap:5px;margin-top:2px;}
-.gpa-chip{background:var(--y400);color:var(--g900);font-weight:700;font-size:9.5px;padding:2px 7px;border-radius:20px;}
-.sem-meta{font-size:10.5px;color:rgba(255,255,255,.65);}
-.sem-acts{display:flex;gap:5px;}
-.ico-btn{width:30px;height:30px;border-radius:7px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
-.ico-btn:hover{background:rgba(255,255,255,.22);}
-.ico-btn.del:hover{background:var(--r500);border-color:var(--r500);}
-.ico-btn svg{width:13px;height:13px;}
-
-/* ── TABLE ── */
-.tbl-wrap{overflow-x:auto;}
-table{width:100%;border-collapse:collapse;min-width:0;}
-th{padding:8px 11px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tm);border-bottom:1.5px solid var(--bdr);text-align:left;background:var(--surf2);}
-td{padding:8px 11px;border-bottom:1px solid var(--bdr);}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:var(--surf2);}
-.cname{width:100%;border:none;background:transparent;font-family:var(--f);font-size:12.5px;color:var(--tp);outline:none;padding:2px 0;border-bottom:1.5px solid transparent;transition:border-color .2s;}
-.cname:focus{border-color:var(--g500);}
-.cname::placeholder{color:var(--tm);}
-.csel{border:1.5px solid var(--bdr);border-radius:var(--r-sm);background:var(--surf);color:var(--tp);font-family:var(--f);font-size:11.5px;padding:4px 7px;outline:none;cursor:pointer;}
-.csel:focus{border-color:var(--g500);}
-.gp-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:22px;padding:0 6px;border-radius:5px;font-size:11.5px;font-weight:700;}
-.gp5{background:var(--g100);color:var(--g800);}.gp4{background:var(--b100);color:var(--b700);}
-.gp3{background:var(--y100);color:var(--y600);}.gp2{background:#fed7aa;color:#c2410c;}
-.gp1{background:var(--p100);color:var(--p600);}.gp0{background:var(--r100);color:var(--r600);}
-.row-del{width:24px;height:24px;border-radius:5px;border:none;background:transparent;color:var(--tm);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
-.row-del:hover{background:var(--r100);color:var(--r600);}
-.weak-flag{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;font-weight:600;color:var(--r600);background:var(--r100);padding:2px 6px;border-radius:20px;margin-left:4px;}
-
-/* ── ADD-COURSE ROW ── */
-.add-row{padding:9px 13px;background:var(--surf2);border-top:1.5px solid var(--bdr);display:flex;align-items:center;}
-.add-course-btn{display:flex;align-items:center;gap:4px;height:30px;padding:0 11px;background:transparent;border:1.5px solid var(--g600);color:var(--g700);border-radius:var(--r-sm);font-family:var(--f);font-size:11.5px;font-weight:600;cursor:pointer;transition:all .2s;}
-.add-course-btn:hover{background:var(--g50);}
-.dm .add-course-btn:hover{background:#1c321c;}
-
-/* ── SEM FOOTER ── */
-.sem-foot{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:var(--g50);border-top:1.5px solid var(--g100);flex-wrap:wrap;gap:6px;}
-.dm .sem-foot{background:#1c321c;border-top-color:var(--bdr);}
-.s-pills{display:flex;gap:5px;flex-wrap:wrap;}
-.s-pill{display:flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:500;border:1.5px solid var(--bdr);background:var(--surf);color:var(--ts);}
-.s-pill b{font-weight:700;color:var(--tp);}
-.cgpa-pill{display:flex;align-items:center;gap:4px;padding:3px 11px;border-radius:20px;font-size:10.5px;font-weight:600;background:var(--g700);color:#fff;}
-.cgpa-pill .cn{font-family:var(--f);font-size:13px;font-weight:800;color:var(--y400);}
-.cgpa-pill .cl{font-size:9.5px;opacity:.8;}
-
-/* ── EMPTY ── */
-.empty-card{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem;text-align:center;color:var(--tm);}
-.empty-icon{font-size:36px;margin-bottom:8px;}
-.empty-card p{font-size:12.5px;}
-.main-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 2rem;text-align:center;color:var(--tm);}
-.main-empty-icon{width:68px;height:68px;border-radius:16px;background:var(--g50);border:2px solid var(--g100);display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:1.1rem;}
-.dm .main-empty-icon{background:#1c321c;border-color:var(--bdr);}
-.main-empty h2{font-family:var(--f);font-size:17px;font-weight:800;color:var(--tp);margin-bottom:5px;}
-.main-empty p{font-size:12.5px;max-width:270px;line-height:1.6;}
-
-/* ── SIDEBAR ── */
-.sidebar{border-left:1.5px solid var(--bdr);background:var(--surf);padding:1.4rem 1.1rem;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;transition:background .3s;}
-.cgpa-panel{background:linear-gradient(135deg,var(--g700),var(--g900));border-radius:var(--r-lg);padding:1.2rem;margin-bottom:1.1rem;color:#fff;position:relative;overflow:hidden;}
-.cgpa-panel::before{content:'';position:absolute;top:-24px;right:-24px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.06);}
-.cgpa-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.65);margin-bottom:4px;}
-.cgpa-num{font-family:var(--f);font-size:46px;font-weight:800;color:#fff;line-height:1;letter-spacing:-2px;}
-.cgpa-num span{color:var(--y400);}
-.cgpa-max{font-size:19px;color:rgba(255,255,255,.42);}
-.cgpa-cls{margin-top:7px;display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.12);border-radius:20px;padding:3px 10px;font-size:10.5px;font-weight:600;color:var(--y300);}
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:1.1rem;}
-.stat-c{background:var(--surf2);border:1.5px solid var(--bdr);border-radius:var(--r-md);padding:10px 12px;}
-.stat-l{font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
-.stat-v{font-family:var(--f);font-size:19px;font-weight:800;color:var(--tp);}
-.sec-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--tm);margin-bottom:7px;margin-top:1rem;}
-.chart-box{background:var(--surf2);border:1.5px solid var(--bdr);border-radius:var(--r-md);padding:12px;margin-bottom:1rem;}
-.prog-item{margin-bottom:9px;}
-.prog-hdr{display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:4px;color:var(--ts);}
-.prog-bg{height:5px;background:var(--bdr);border-radius:3px;overflow:hidden;}
-.prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--g500),var(--g200));transition:width .5s ease;}
-.sb-btn{display:flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:var(--r-sm);border:1.5px solid var(--bdr);background:var(--surf);color:var(--tp);font-family:var(--f);font-size:11.5px;font-weight:500;cursor:pointer;transition:all .2s;width:100%;margin-bottom:6px;}
-.sb-btn:hover{border-color:var(--g500);color:var(--g700);background:var(--g50);}
-.dm .sb-btn:hover{background:#1c321c;}
-.sb-btn svg{width:14px;height:14px;flex-shrink:0;}
-
-/* ── PREDICTION PANEL ── */
-.pred-panel{background:linear-gradient(135deg,#1e3a5f,#0f2340);border-radius:var(--r-lg);padding:1.2rem;margin-bottom:1.1rem;color:#fff;position:relative;overflow:hidden;}
-.pred-panel::before{content:'';position:absolute;top:-20px;right:-20px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.05);}
-.pred-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.6);margin-bottom:3px;}
-.pred-num{font-family:var(--f);font-size:34px;font-weight:800;letter-spacing:-1px;}
-.pred-num.good{color:#34d399;}.pred-num.ok{color:var(--y400);}.pred-num.warn{color:#f87171;}
-.pred-sub{font-size:10.5px;color:rgba(255,255,255,.65);margin-top:4px;line-height:1.5;}
-.pred-sems{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
-.pred-opt{font-size:9.5px;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.75);cursor:pointer;transition:all .2s;}
-.pred-opt.sel{background:var(--y400);color:var(--g900);border-color:var(--y400);}
-
-/* ── RECORDS VIEW ── */
-.rec-view{max-width:1200px;margin:0 auto;padding:1.75rem 2rem;}
-.rec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.4rem;flex-wrap:wrap;gap:10px;}
-.rec-hdr h1{font-family:var(--f);font-size:22px;font-weight:800;color:var(--tp);}
-.rec-hdr p{font-size:12px;color:var(--ts);margin-top:2px;}
-.rec-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.rec-search{position:relative;}
-.rec-search input{height:36px;padding:0 12px 0 36px;border:1.5px solid var(--bdr);border-radius:var(--r-md);background:var(--surf);color:var(--tp);font-family:var(--f);font-size:12px;outline:none;width:220px;}
-.rec-search input:focus{border-color:var(--g500);}
-.rec-si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--tm);}
-.rec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;}
-.rec-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r-lg);padding:1.1rem;box-shadow:var(--sh-sm);cursor:pointer;transition:all .22s;animation:fadeUp .28s ease;}
-.rec-card:hover{box-shadow:var(--sh-md);border-color:#86efac;transform:translateY(-2px);}
-.rec-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
-.rec-av{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--g600),var(--g900));display:flex;align-items:center;justify-content:center;font-family:var(--f);font-size:15px;font-weight:800;color:#fff;flex-shrink:0;}
-.rec-del{width:26px;height:26px;border-radius:6px;border:none;background:transparent;color:var(--tm);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
-.rec-del:hover{background:var(--r100);color:var(--r600);}
-.rec-edit{width:26px;height:26px;border-radius:6px;border:none;background:transparent;color:var(--tm);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
-.rec-edit:hover{background:var(--b100);color:var(--b600);}
-.rec-name{font-size:13.5px;font-weight:700;color:var(--tp);margin-bottom:1px;}
-.rec-matric{font-size:10.5px;color:var(--tm);font-weight:500;}
-.rec-stats{display:flex;gap:6px;margin-top:9px;}
-.rs{background:var(--surf2);border-radius:7px;padding:5px 8px;flex:1;}
-.rs-l{font-size:8.5px;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;}
-.rs-v{font-family:var(--f);font-size:15px;font-weight:800;color:var(--tp);}
-.rec-bot{margin-top:9px;display:flex;align-items:center;justify-content:space-between;}
-.cls-tag{font-size:9.5px;font-weight:700;padding:2px 9px;border-radius:20px;}
-.rec-cgpa{font-family:var(--f);font-size:21px;font-weight:800;color:var(--g700);} 
-.rec-date{font-size:9.5px;color:var(--tm);margin-top:7px;}
-.rec-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3.5rem 2rem;text-align:center;color:var(--tm);grid-column:1/-1;}
-.rec-empty .ei{font-size:44px;margin-bottom:10px;}
-.rec-empty h3{font-family:var(--f);font-size:17px;font-weight:800;color:var(--tp);margin-bottom:5px;}
-.rec-empty p{font-size:12.5px;max-width:250px;line-height:1.6;}
-
-/* ── ANALYTICS VIEW ── */
-.analytics-view{max-width:1200px;margin:0 auto;padding:1.75rem 2rem;}
-.an-hdr{margin-bottom:1.4rem;}
-.an-hdr h1{font-family:var(--f);font-size:22px;font-weight:800;color:var(--tp);}
-.an-hdr p{font-size:12px;color:var(--ts);margin-top:2px;}
-.an-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:1.4rem;}
-.an-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r-lg);padding:1.2rem;box-shadow:var(--sh-sm);}
-.an-card h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--tm);margin-bottom:12px;}
-.weak-course-item{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bdr);}
-.weak-course-item:last-child{border-bottom:none;}
-.wci-name{font-size:12.5px;font-weight:600;color:var(--tp);}
-.wci-meta{font-size:10.5px;color:var(--tm);margin-top:1px;}
-.wci-right{display:flex;align-items:center;gap:6px;}
-.grade-dot{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;}
-.trend-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bdr);font-size:12px;}
-.trend-row:last-child{border-bottom:none;}
-.trend-sem{font-weight:600;color:var(--tp);}
-.trend-gpa{font-family:var(--f);font-weight:800;}
-.trend-up{color:var(--g600);}.trend-down{color:var(--r600);}.trend-eq{color:var(--tm);}
-.trend-arr{font-size:11px;margin-left:3px;}
-
-/* ── STUDY VIEW ── */
-.ai-view{max-width:1000px;margin:0 auto;padding:1.75rem 2rem;}
-.ai-hdr{margin-bottom:1.4rem;}
-.ai-hdr h1{font-family:var(--f);font-size:22px;font-weight:800;color:var(--tp);}
-.ai-hdr p{font-size:12px;color:var(--ts);margin-top:2px;}
-.ai-config{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r-lg);padding:1.2rem;margin-bottom:1.2rem;box-shadow:var(--sh-sm);} 
-.ai-config h3{font-size:12px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;}
-.ai-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
-.ai-fg{display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px;}
-.ai-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--tm);}
-.ai-sel,.ai-inp{height:34px;padding:0 10px;border:1.5px solid var(--bdr);border-radius:var(--r-sm);background:var(--surf2);color:var(--tp);font-family:var(--f);font-size:12px;outline:none;cursor:pointer;}
-.ai-sel:focus,.ai-inp:focus{border-color:var(--g500);}
-.gen-btn{height:34px;padding:0 18px;background:var(--g700);color:#fff;border:none;border-radius:var(--r-sm);font-family:var(--f);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;white-space:nowrap;}
-.gen-btn:hover{background:var(--g600);}
-.gen-btn:disabled{background:var(--tm);cursor:not-allowed;}
-.ai-output{background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-sm);} 
-.ai-tab-bar{display:flex;border-bottom:1.5px solid var(--bdr);background:var(--surf2);} 
-.ai-tab{height:40px;padding:0 16px;font-family:var(--f);font-size:12px;font-weight:500;color:var(--tm);cursor:pointer;border:none;background:transparent;transition:all .2s;border-bottom:2px solid transparent;margin-bottom:-1px;}
-.ai-tab.act{color:var(--g700);border-bottom-color:var(--g700);font-weight:700;}
-.ai-tab-content{display:none;padding:1.4rem;}.ai-tab-content.act{display:block;}
-.loading-pulse{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem;gap:12px;}
-.pulse-dots{display:flex;gap:7px;}
-.pulse-dot{width:10px;height:10px;border-radius:50%;background:var(--g500);animation:pulseDot 1.2s ease-in-out infinite;}
-.pulse-dot:nth-child(2){animation-delay:.2s;background:var(--y400);}
-.pulse-dot:nth-child(3){animation-delay:.4s;background:var(--b600);}
-@keyframes pulseDot{0%,100%{transform:scale(.7);opacity:.5;}50%{transform:scale(1);opacity:1;}}
-.loading-pulse p{font-size:12.5px;color:var(--tm);}
-
-/* MCQ */
-.mcq-item{background:var(--surf2);border:1.5px solid var(--bdr);border-radius:var(--r-md);padding:1rem;margin-bottom:10px;animation:fadeUp .25s ease;}
-.mcq-q{font-size:13px;font-weight:600;color:var(--tp);margin-bottom:10px;line-height:1.5;}
-.mcq-q span{font-size:10px;font-weight:700;background:var(--g100);color:var(--g700);padding:2px 7px;border-radius:20px;margin-right:6px;}
-.mcq-opts{display:flex;flex-direction:column;gap:6px;}
-.mcq-opt{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border-radius:var(--r-sm);border:1.5px solid var(--bdr);cursor:pointer;transition:all .18s;background:var(--surf);font-size:12.5px;}
-.mcq-opt:hover{border-color:var(--g500);background:var(--g50);}
-.mcq-opt.correct{border-color:var(--g500);background:var(--g50);color:var(--g700);}
-.mcq-opt.wrong{border-color:var(--r500);background:var(--r100);color:var(--r600);}
-.mcq-opt.reveal{border-color:var(--g500);background:var(--g50);color:var(--g700);}
-.opt-letter{width:20px;height:20px;border-radius:5px;background:var(--bdr);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;}
-.mcq-result{margin-top:10px;padding:7px 11px;border-radius:var(--r-sm);font-size:12px;font-weight:600;display:none;}
-.mcq-result.show{display:block;}
-.mcq-result.correct{background:var(--g100);color:var(--g700);}
-.mcq-result.wrong{background:var(--r100);color:var(--r600);}
-.quiz-score-bar{background:var(--surf2);border:1.5px solid var(--bdr);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
-.qs-label{font-size:11.5px;color:var(--ts);font-weight:500;}
-.qs-val{font-family:var(--f);font-size:18px;font-weight:800;color:var(--g700);}
-
-/* FLASHCARDS */
-.flash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;}
-.flash-card{height:160px;perspective:900px;cursor:pointer;}
-.flash-inner{position:relative;width:100%;height:100%;transition:transform .5s ease;transform-style:preserve-3d;}
-.flash-card.flipped .flash-inner{transform:rotateY(180deg);}
-.flash-front,.flash-back{position:absolute;inset:0;border-radius:var(--r-md);border:1.5px solid var(--bdr);padding:1rem;display:flex;flex-direction:column;justify-content:center;backface-visibility:hidden;}
-.flash-front{background:var(--surf);box-shadow:var(--sh-sm);}
-.flash-back{background:linear-gradient(135deg,var(--g700),var(--g900));color:#fff;transform:rotateY(180deg);}
-.flash-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--tm);margin-bottom:6px;}
-.flash-q{font-size:12.5px;font-weight:600;color:var(--tp);line-height:1.5;}
-.flash-hint{font-size:9.5px;color:var(--tm);margin-top:6px;}
-.flash-ans-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:rgba(255,255,255,.6);margin-bottom:5px;}
-.flash-ans{font-size:15px;font-weight:800;font-family:var(--f);color:#fff;}
-.flash-ans.true{color:#4ade80;}.flash-ans.false{color:#f87171;}
-.flash-exp{font-size:10.5px;color:rgba(255,255,255,.75);margin-top:5px;line-height:1.4;}
-
-/* ── MODAL ── */
-.modal-ov{display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1rem;}
-.modal-ov.open{display:flex;}
-.modal{background:var(--surf);border-radius:var(--r-xl);width:100%;max-width:860px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--sh-lg);animation:mIn .24s ease;}
-@keyframes mIn{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:scale(1);}}
-.modal-hdr{padding:1.1rem 1.4rem;background:linear-gradient(135deg,var(--g700),var(--g900));color:#fff;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0;}
-.modal-hdr h2{font-family:var(--f);font-size:15.5px;font-weight:800;}
-.modal-hdr p{font-size:10.5px;color:rgba(255,255,255,.7);margin-top:2px;}
-.modal-x{width:30px;height:30px;border-radius:7px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
-.modal-x:hover{background:rgba(255,255,255,.22);}
-.modal-body{overflow-y:auto;padding:1.4rem;}
-.modal-meta{display:flex;gap:8px;margin-bottom:1.1rem;flex-wrap:wrap;}
-.mm-item{flex:1;min-width:120px;background:var(--surf2);border:1.5px solid var(--bdr);border-radius:var(--r-md);padding:10px 12px;}
-.mm-lbl{font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;}
-.mm-val{font-size:13.5px;font-weight:700;color:var(--tp);}
-.mm-val.big{font-family:var(--f);font-size:21px;color:var(--g700);}
-.modal-footer{padding:.9rem 1.4rem;border-top:1.5px solid var(--bdr);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;background:var(--surf);}
-
-/* ── TOAST ── */
-.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(16px);background:var(--g800);color:#fff;padding:9px 16px;border-radius:var(--r-md);font-size:12px;font-weight:500;box-shadow:var(--sh-lg);z-index:999;opacity:0;transition:all .3s;white-space:nowrap;}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-
-/* ── MOBILE ── */
-.mob-btn{display:none;width:34px;height:34px;border-radius:7px;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;align-items:center;justify-content:center;}
-.mob-ov{display:none;position:fixed;inset:0;z-index:250;background:rgba(0,0,0,.5);}
-/* hamburger bars (was in external CSS) */
-.mob-btn .hamburger{display:inline-flex;flex-direction:column;gap:4px;width:18px;height:14px;justify-content:center;align-items:center}
-.mob-btn .bar{display:block;width:100%;height:2px;background:currentColor;border-radius:2px;transition:transform .28s ease,opacity .2s ease,background .2s ease}
-.mob-btn.open .bar:nth-child(1){transform:translateY(6px) rotate(45deg)}
-.mob-btn.open .bar:nth-child(2){opacity:0}
-.mob-btn.open .bar:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
-.nav-mobile{display:none}
-@media(max-width:920px){
-  .app-layout{grid-template-columns:1fr;}
-  .sidebar{position:fixed;right:-340px;top:60px;height:calc(100vh - 60px);width:310px;z-index:260;transition:right .3s;box-shadow:var(--sh-lg);} 
-  .sidebar.open{right:0;}
-  .mob-ov.open{display:block;}
-  .mob-btn{display:flex;}
-  /* hide desktop nav actions and show mobile nav inside sidebar */
-  .nav-c{display:none!important}
-  .nav-mobile{display:flex;flex-direction:column;gap:8px;margin:12px 8px}
-  .main-col,.rec-view,.analytics-view,.ai-view{padding:1.2rem 1rem;}
-}
-
-/* Top-nav responsive tweaks */
-@media(max-width:1100px){
-  nav{padding:0 12px;height:54px}
-  .nav-logo{font-size:18px}
-  .nb{padding:0 9px;font-size:11px}
-}
-@media(max-width:920px){
-  /* collapse nav buttons into hamburger */
-  .nav-c{display:none!important}
-  .scale-wrap{display:none}
-  .mob-btn{display:flex;position:fixed;right:12px;top:12px;z-index:99999;background:var(--g700);color:#fff;border:none;border-radius:8px;width:40px;height:40px;align-items:center;justify-content:center}
-  .mob-btn .bar{background:#fff}
-  nav{padding-right:64px}
-}
-@media(max-width:560px){
-  nav{padding:0 10px}
-  .nav-logo{font-size:16px}
-  .nb{display:none}
-}
-@media(max-width:500px){
-  nav{padding:0 1rem;}
-  .nav-logo{font-size:16px;}
-  .scale-lbl{display:none;}
-  .cgpa-num{font-size:38px;}
-}
-@media print{
-  nav,.sb-btn,.toolbar,.sem-acts,.row-del,.add-row,.stu-card .sbtn,.ai-view,.analytics-view,.rec-view{display:none!important;}
-  body{background:#fff;}
-}
-
-/* ── UPLOAD ZONE ── */
-.upload-zone{border:2px dashed var(--bdr);border-radius:var(--r-lg);padding:1.5rem;text-align:center;cursor:pointer;transition:all .25s;background:var(--surf2);position:relative;margin-bottom:1rem;}
-.upload-zone:hover,.upload-zone.drag{border-color:var(--g500);background:var(--g50);}
-.dm .upload-zone:hover,.dm .upload-zone.drag{background:#1c321c;}
-.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-.upload-icon{font-size:32px;margin-bottom:8px;}
-.upload-title{font-size:13px;font-weight:700;color:var(--tp);margin-bottom:3px;}
-.upload-sub{font-size:11px;color:var(--tm);line-height:1.5;}
-.upload-types{display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap;}
-.upload-type-tag{font-size:9.5px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--surf);border:1.5px solid var(--bdr);color:var(--ts);}
-.files-list{display:flex;flex-direction:column;gap:6px;margin-bottom:.5rem;}
-.file-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:var(--r-md);animation:fadeUp .2s ease;}
-.file-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-.file-icon.pdf{background:#fee2e2;}.file-icon.doc{background:#dbeafe;}.file-icon.txt{background:var(--g100);}.file-icon.img{background:var(--y100);}
-.file-info{flex:1;min-width:0;}
-.file-name{font-size:12.5px;font-weight:600;color:var(--tp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.file-size{font-size:10px;color:var(--tm);margin-top:1px;}
-.file-status{font-size:9.5px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
-.file-status.ready{background:var(--g100);color:var(--g700);}.file-status.reading{background:var(--y100);color:var(--y600);}.file-status.error{background:var(--r100);color:var(--r600);}
-.file-del{width:26px;height:26px;border-radius:6px;border:none;background:transparent;color:var(--tm);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
-.file-del:hover{background:var(--r100);color:var(--r600);}
-.source-toggle{display:flex;gap:0;background:var(--surf2);border:1.5px solid var(--bdr);border-radius:var(--r-md);overflow:hidden;margin-bottom:1rem;}
-.src-btn{flex:1;height:36px;border:none;background:transparent;font-family:var(--f);font-size:11.5px;font-weight:500;color:var(--tm);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
-.src-btn.act{background:var(--g700);color:#fff;font-weight:700;}
-.material-section{display:none;}.material-section.act{display:block;}
-.char-counter{font-size:10px;color:var(--tm);text-align:right;margin-top:3px;}
-.paste-area{width:100%;min-height:120px;padding:10px 12px;border:1.5px solid var(--bdr);border-radius:var(--r-md);background:var(--surf2);color:var(--tp);font-family:var(--f);font-size:12.5px;resize:vertical;outline:none;transition:border-color .2s;line-height:1.6;}
-.paste-area:focus{border-color:var(--g500);background:var(--surf);}
-.paste-area::placeholder{color:var(--tm);}
-.context-badge{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;padding:4px 12px;border-radius:20px;}
-.context-badge.has-material{background:var(--g700);color:#fff;}
-
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
@@ -435,38 +39,42 @@ tr:hover td{background:var(--surf2);}
     <div class="logo-icon">CC</div>
     CGPA <span>Calc</span>
   </div>
-  <div class="nav-c">
-    <div class="scale-wrap">
-      <span class="scale-lbl">Grading Scale:</span>
-      <select class="scale-sel" id="globalScale" onchange="onScaleChange()">
-        <option value="5">5.0 Scale</option>
-        <option value="4">4.0 Scale</option>
-      </select>
+  <div class="nav-c" id="navC">
+    <div class="nav-links">
+      <button class="nb act" id="nb-editor" onclick="showView('editor')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Editor
+      </button>
+      <button class="nb" id="nb-records" onclick="showView('records')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <span id="recBadge">Records</span>
+      </button>
+      <button class="nb" id="nb-analytics" onclick="showView('analytics')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </button>
+      <button class="nb" id="nb-study" onclick="showView('study')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+        Study
+      </button>
     </div>
-    <button class="nb act" id="nb-editor" onclick="showView('editor')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      Editor
-    </button>
-    <button class="nb" id="nb-records" onclick="showView('records')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-      <span id="recBadge">Records</span>
-    </button>
-    <button class="nb" id="nb-analytics" onclick="showView('analytics')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      Analytics
-    </button>
-    <button class="nb" id="nb-study" onclick="showView('study')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
-      Study
-    </button>
-    <button class="nb" onclick="toggleDarkMode()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-      <span id="dmLbl">Dark</span>
-    </button>
-    <button class="nb yel" onclick="exportPDF()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      PDF
-    </button>
+    <div class="nav-utils">
+      <div class="scale-wrap">
+        <span class="scale-lbl">Grading Scale:</span>
+        <select class="scale-sel" id="globalScale" onchange="onScaleChange()">
+          <option value="5">5.0 Scale</option>
+          <option value="4">4.0 Scale</option>
+        </select>
+      </div>
+      <button class="nb" onclick="toggleDarkMode()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        <span id="dmLbl">Dark</span>
+      </button>
+      <button class="nb yel" onclick="exportPDF()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        PDF
+      </button>
+    </div>
   </div>
   <button class="mob-btn" id="mobBtn" aria-label="Open menu" onclick="toggleSidebar()">
     <span class="hamburger" aria-hidden="true">
@@ -505,14 +113,16 @@ tr:hover td{background:var(--surf2);}
             </select>
           </div>
         </div>
-        <button class="sbtn" onclick="saveRecord()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Save Record
-        </button>
-        <button class="sbtn out" onclick="importXLSX()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Import
-        </button>
+        <div class="stu-actions">
+          <button class="sbtn" onclick="saveRecord()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Record
+          </button>
+          <button class="sbtn out" onclick="importXLSX()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import
+          </button>
+        </div>
         <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="onImportFile(event)">
       </div>
 
@@ -540,21 +150,6 @@ tr:hover td{background:var(--surf2);}
 
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
-      <div class="nav-mobile" id="navMobile">
-        <div class="scale-wrap" style="margin-bottom:8px;align-items:center;">
-          <span class="scale-lbl" style="color:var(--text-3);margin-right:8px;">Scale:</span>
-          <select class="scale-sel" id="mobileScale" onchange="(function(){$('globalScale').value=this.value;onScaleChange();})();">
-            <option value="5">5.0</option>
-            <option value="4">4.0</option>
-          </select>
-        </div>
-        <button class="sb-btn" onclick="showView('editor')">Editor</button>
-        <button class="sb-btn" onclick="showView('records')">Records</button>
-        <button class="sb-btn" onclick="showView('analytics')">Analytics</button>
-        <button class="sb-btn" onclick="showView('study')">Study</button>
-        <button class="sb-btn" onclick="toggleDarkMode()">Toggle Theme</button>
-        <button class="sb-btn" onclick="exportPDF()">Export PDF</button>
-      </div>
       <!-- CGPA -->
       <div class="cgpa-panel">
         <div class="cgpa-lbl">Overall CGPA</div>
@@ -672,18 +267,18 @@ tr:hover td{background:var(--surf2);}
 
     <div class="ai-config">
       <h3>Step 1 — Add Course Material (Optional but Recommended)</h3>
-      <div class="source-toggle">
-        <button class="src-btn act" id="srcUpload" onclick="switchSource('upload')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Upload Files
+      <div class="source-toggle" role="tablist" aria-label="Material source">
+        <button class="src-btn act" id="srcUpload" onclick="switchSource('upload')" role="tab" aria-selected="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span class="src-label"><span class="src-full">Upload Files</span><span class="src-short">Upload</span></span>
         </button>
-        <button class="src-btn" id="srcPaste" onclick="switchSource('paste')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-          Paste Text
+        <button class="src-btn" id="srcPaste" onclick="switchSource('paste')" role="tab" aria-selected="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+          <span class="src-label"><span class="src-full">Paste Text</span><span class="src-short">Paste</span></span>
         </button>
-        <button class="src-btn" id="srcNone" onclick="switchSource('none')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Topic Only
+        <button class="src-btn" id="srcNone" onclick="switchSource('none')" role="tab" aria-selected="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span class="src-label"><span class="src-full">Topic Only</span><span class="src-short">Topic</span></span>
         </button>
       </div>
 
@@ -717,12 +312,12 @@ tr:hover td{background:var(--surf2);}
     <div class="ai-config">
       <h3>Step 2 — Configure Generation</h3>
       <div id="materialContextBadge" style="margin-bottom:10px;display:none;">
-        <span class="context-badge has-material" id="ctxBadge">📎 Material loaded</span>
+        <span class="context-badge has-material" id="ctxBadge">Material loaded</span>
       </div>
       <div class="ai-form">
         <div class="ai-fg">
           <div class="ai-lbl">Course / Topic Name</div>
-          <input class="ai-inp" id="aiCourse" placeholder="e.g. Data Structures" style="flex:1;width:100%;">
+          <input class="ai-inp" id="aiCourse" placeholder="e.g. Data Structures">
         </div>
         <div class="ai-fg">
           <div class="ai-lbl">Content Type</div>
@@ -749,11 +344,11 @@ tr:hover td{background:var(--surf2);}
             <option value="20">20</option>
           </select>
         </div>
-        <button class="gen-btn" id="genBtn" onclick="generateStudyMaterial()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
-          Generate
-        </button>
       </div>
+      <button class="gen-btn gen-btn-full" id="genBtn" onclick="generateStudyMaterial()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+        Generate Assessment
+      </button>
     </div>
 
     <div class="ai-output" id="aiOutput" style="display:none;">
@@ -767,6 +362,7 @@ tr:hover td{background:var(--surf2);}
   </div>
 </div>
 
+<script src="env.js"></script>
 <script>
 /* ══════════════════════════════════════════
    SCALE & GRADE MAPS
@@ -815,22 +411,22 @@ function showView(v){
   const nb=$('nb-'+v);if(nb)nb.classList.add('act');
   if(v==='records')renderRecs();
   if(v==='analytics')renderAnalytics();
+  closeSidebar();
 }
 function openSidebar(){
-  $('sidebar').classList.add('open');
+  document.body.classList.add('menu-open');
   $('mobOv').classList.add('open');
   const b=$('mobBtn'); if(b) b.classList.add('open');
   if(b) b.setAttribute('aria-label','Close menu');
 }
 function closeSidebar(){
-  $('sidebar').classList.remove('open');
+  document.body.classList.remove('menu-open');
   $('mobOv').classList.remove('open');
   const b=$('mobBtn'); if(b) b.classList.remove('open');
   if(b) b.setAttribute('aria-label','Open menu');
 }
 function toggleSidebar(){
-  const sb=$('sidebar'); if(!sb) return;
-  if(sb.classList.contains('open')) closeSidebar(); else openSidebar();
+  if(document.body.classList.contains('menu-open')) closeSidebar(); else openSidebar();
 }
 
 /* ══════════════════════════════════════════
@@ -920,7 +516,17 @@ function liveFooters(){
 function renderSems(){
   const con=$('semsContainer');
   if(!sems.length){
-    con.innerHTML=`<div class="main-empty"><div class="main-empty-icon"></div><h2>No Semesters Yet</h2><p>Click "Add Semester" above to start tracking your academic performance</p></div>`;
+    con.innerHTML=`<div class="main-empty">
+      <div class="main-empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h8"/></svg>
+      </div>
+      <h2>No Semesters Yet</h2>
+      <p>Add your first semester to start tracking GPA and CGPA live.</p>
+      <button class="tbtn green" onclick="addSem()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Semester
+      </button>
+    </div>`;
     return;
   }
   const q=($('searchInp').value||'').toLowerCase();
@@ -940,17 +546,17 @@ function renderSems(){
           const gp=G[c.grade]*c.unit;
           const isWeak=G[c.grade]<weakThresh();
           return `<tr data-cid="${c.id}">
-            <td><input class="cname" value="${esc(c.name)}" placeholder="Course name…" oninput="updCourse(${sem.id},${c.id},'name',this.value)">
-            ${isWeak?'<span class="weak-flag">⚠ Weak</span>':''}</td>
-            <td><select class="csel" onchange="updCourse(${sem.id},${c.id},'unit',this.value)">
+            <td data-label="Course"><input class="cname" value="${esc(c.name)}" placeholder="Course name…" oninput="updCourse(${sem.id},${c.id},'name',this.value)">
+            ${isWeak?'<span class="weak-flag">Weak</span>':''}</td>
+            <td data-label="Unit"><select class="csel" onchange="updCourse(${sem.id},${c.id},'unit',this.value)">
               ${[1,2,3,4,5,6].map(u=>`<option value="${u}"${c.unit==u?' selected':''}>${u}u</option>`).join('')}
             </select></td>
-            <td><select class="csel" onchange="updCourse(${sem.id},${c.id},'grade',this.value)">
+            <td data-label="Grade"><select class="csel" onchange="updCourse(${sem.id},${c.id},'grade',this.value)">
               ${K.map(g=>`<option value="${g}"${c.grade===g?' selected':''}>${g} (${G[g]})</option>`).join('')}
             </select></td>
-            <td><span class="gp-badge gp${G[c.grade]}">${gp}</span></td>
-            <td style="color:var(--tm);font-size:11px;">${c.unit>0?(gp/c.unit).toFixed(2):'-'}</td>
-            <td><button class="row-del" onclick="delCourse(${sem.id},${c.id})">
+            <td data-label="GP"><span class="gp-badge gp${G[c.grade]}">${gp}</span></td>
+            <td data-label="GP/Unit" style="color:var(--tm);font-size:11px;">${c.unit>0?(gp/c.unit).toFixed(2):'-'}</td>
+            <td data-label=""><button class="row-del" onclick="delCourse(${sem.id},${c.id})">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
             </button></td>
           </tr>`;
@@ -1130,7 +736,7 @@ function switchSource(src){
   ['upload','paste','none'].forEach(s=>{
     const btn=$('src'+s.charAt(0).toUpperCase()+s.slice(1));
     const sec=$('sec'+s.charAt(0).toUpperCase()+s.slice(1));
-    if(btn)btn.classList.toggle('act',s===src);
+    if(btn){btn.classList.toggle('act',s===src);btn.setAttribute('aria-selected',s===src?'true':'false');}
     if(sec)sec.classList.toggle('act',s===src);
   });
   updateCtxBadge();
@@ -1241,13 +847,96 @@ function renderFilesList(){
   }).join('');
 }
 
-/* ── GENERATION ── */
+/* ── GENERATION (Google Gemini) ── */
+const GEMINI_MODELS=['gemini-2.0-flash','gemini-2.5-flash','gemini-1.5-flash'];
+const GEN_BTN_HTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg> Generate Assessment';
+
+function getGeminiKey(){
+  try{return String((window.__ENV&&(window.__ENV.GEMINI_API_KEY||window.__ENV.GOOGLE_API_KEY))||'').trim();}catch(e){return '';}
+}
+
+function buildStudyPrompt(course,diff,n,wantMcq,wantFlash,hasMaterial){
+  const audience='Nigerian polytechnic and university students';
+  let p='Create an original assessment for the course/topic "'+course+'" at '+diff+' difficulty for '+audience+'.\n';
+  if(hasMaterial)p+='Use ONLY the course material provided. Do not invent facts that are not supported by the material.\n';
+  else p+='Use accurate general knowledge of this topic. Prefer exam-style questions a lecturer might set.\n';
+  if(wantMcq)p+='Generate exactly '+n+' multiple-choice questions. Each must have 4 options labeled A–D, one correct answer letter, and a short explanation.\n';
+  if(wantFlash)p+='Generate exactly '+n+' true/false flashcards. Each must have a statement, boolean answer, and a short explanation.\n';
+  if(!wantMcq)p+='Return "mcqs" as an empty array.\n';
+  if(!wantFlash)p+='Return "flashcards" as an empty array.\n';
+  p+='Return JSON only in this shape: {"mcqs":[{"q":"question","opts":["option A","option B","option C","option D"],"ans":"A","exp":"why"}],"flashcards":[{"statement":"claim","answer":true,"exp":"why"}]}';
+  return p;
+}
+
+function parseGeminiJson(raw){
+  const jsonMatch=String(raw||'').match(/```json\s*([\s\S]*?)```/)||String(raw||'').match(/(\{[\s\S]*\})/);
+  if(!jsonMatch)throw new Error('Gemini did not return valid JSON. Try again.');
+  return JSON.parse(jsonMatch[1]||jsonMatch[0]);
+}
+
+function normalizeQuiz(parsed,wantMcq,wantFlash){
+  let mcqs=Array.isArray(parsed.mcqs)?parsed.mcqs:[];
+  let cards=Array.isArray(parsed.flashcards)?parsed.flashcards:[];
+  mcqs=mcqs.map(q=>{
+    const opts=Array.isArray(q.opts)?q.opts.map(o=>String(o).replace(/^[A-D][.)]\s*/,'' )).slice(0,4):[];
+    while(opts.length<4)opts.push('Option '+(opts.length+1));
+    let ans=String(q.ans||'A').trim().toUpperCase();
+    ans=ans.replace(/[^A-D].*/,'');
+    if(!['A','B','C','D'].includes(ans))ans='A';
+    return{q:String(q.q||'').trim(),opts,ans,exp:String(q.exp||'').trim()};
+  }).filter(q=>q.q);
+  cards=cards.map(f=>{
+    let ans=f.answer;
+    if(typeof ans==='string')ans=/^(true|t|yes|1)$/i.test(ans.trim());
+    return{statement:String(f.statement||'').trim(),answer:!!ans,exp:String(f.exp||'').trim()};
+  }).filter(f=>f.statement);
+  if(!wantMcq)mcqs=[];
+  if(!wantFlash)cards=[];
+  return{mcqs,cards};
+}
+
+async function callGemini(parts){
+  const key=getGeminiKey();
+  if(!key)throw new Error('Add GEMINI_API_KEY to your .env file, then refresh the page.');
+  let lastErr=null;
+  for(const model of GEMINI_MODELS){
+    const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(key);
+    const payload={
+      systemInstruction:{parts:[{text:'You are an exam-prep tutor. Produce original assessment items and valid JSON only.'}]},
+      contents:[{role:'user',parts}],
+      generationConfig:{temperature:0.5,maxOutputTokens:8192,responseMimeType:'application/json'}
+    };
+    let res,data;
+    try{
+      res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      data=await res.json();
+    }catch(err){lastErr=err;continue;}
+    if(data.error){
+      const msg=data.error.message||'Gemini request failed';
+      lastErr=new Error(msg);
+      const low=msg.toLowerCase();
+      if(low.includes('api key')||low.includes('permission denied')||res.status===403||res.status===401)throw lastErr;
+      continue;
+    }
+    const cand=(data.candidates||[])[0];
+    const text=((cand&&cand.content&&cand.content.parts)||[]).map(p=>p.text||'').join('');
+    if(!text){
+      const block=(data.promptFeedback&&data.promptFeedback.blockReason)||(cand&&cand.finishReason);
+      lastErr=new Error(block?'Gemini blocked or stopped the response ('+block+'). Try different material or a shorter topic.':'Empty response from Gemini.');
+      continue;
+    }
+    return text;
+  }
+  throw lastErr||new Error('Gemini request failed');
+}
+
 async function generateStudyMaterial(){
   const course=($('aiCourse').value||'').trim();
   const type=$('aiType').value;
   const diff=$('aiDiff').value;
-  const count=parseInt($('aiCount').value);
+  const count=parseInt($('aiCount').value,10)||10;
   if(!course){toast('Enter a course or topic name first');if($('aiCourse'))$('aiCourse').focus();return;}
+  if(!getGeminiKey()){toast('Add GEMINI_API_KEY to your .env file, then refresh');return;}
 
   const readyFiles=uploadedFiles.filter(f=>f.status==='ready');
   const pasteText=(($('pasteText')&&$('pasteText').value)||'').trim();
@@ -1256,9 +945,9 @@ async function generateStudyMaterial(){
   const hasMaterial=hasUpload||hasPaste;
 
   const btn=$('genBtn');if(!btn)return;
-  btn.disabled=true;btn.textContent='Generating…';
+  btn.disabled=true;btn.textContent='Generating with Gemini…';
   const out=$('aiOutput');if(out)out.style.display='block';
-  const loading='<div class="loading-pulse"><div class="pulse-dots"><div class="pulse-dot"></div><div class="pulse-dot"></div><div class="pulse-dot"></div></div><p>'+(hasMaterial?'Reading materials & generating questions…':'Generating questions for "'+course+'"…')+'</p></div>';
+  const loading='<div class="loading-pulse"><div class="pulse-dots"><div class="pulse-dot"></div><div class="pulse-dot"></div><div class="pulse-dot"></div></div><p>'+(hasMaterial?'Reading your materials and generating an assessment…':'Generating a '+diff+' assessment for "'+esc(course)+'"…')+'</p></div>';
   const mc=$('mcqContent');const fc=$('flashContent');
   if(mc){mc.innerHTML=loading;mc.classList.add('act');}
   if(fc){fc.innerHTML=loading;fc.classList.remove('act');}
@@ -1268,87 +957,51 @@ async function generateStudyMaterial(){
   const wantMcq=type==='mcq'||type==='both';
   const wantFlash=type==='flash'||type==='both';
   const n=wantMcq&&wantFlash?Math.ceil(count/2):count;
+  const prompt=buildStudyPrompt(course,diff,n,wantMcq,wantFlash,hasMaterial);
 
-  const jsonFmt='Return ONLY valid JSON: {"mcqs":[{"q":"question","opts":["A. option","B. option","C. option","D. option"],"ans":"A","exp":"explanation"}],"flashcards":[{"statement":"statement","answer":true,"exp":"explanation"}]}. Use empty array [] for unrequested sections. NO markdown, ONLY the JSON.';
-
-  let messages=[];
-
+  const parts=[];
+  const MAX_B64=8*1024*1024;
   if(hasUpload){
-    const userContent=[];
-    let totalBase64Bytes=0;
-    const MAX_TOTAL_B64=4*1024*1024; // 4MB base64 limit to avoid payload errors
     readyFiles.forEach(f=>{
       const b64size=f.base64?f.base64.length:0;
-      totalBase64Bytes+=b64size;
-      if(f.apiType==='document'&&b64size<MAX_TOTAL_B64){
-        userContent.push({type:'document',source:{type:'base64',media_type:f.mediaType,data:f.base64}});
-      } else if(f.apiType==='image'&&b64size<MAX_TOTAL_B64){
-        userContent.push({type:'image',source:{type:'base64',media_type:f.mediaType,data:f.base64}});
-      } else if(f.apiType==='text'&&f.textContent){
-        userContent.push({type:'text',text:'[File: '+f.name+']\n'+f.textContent});
-      } else if(f.apiType==='document'&&b64size>=MAX_TOTAL_B64){
-        // PDF too large — fall back to telling user
-        userContent.push({type:'text',text:'[Note: '+f.name+' was too large to include in full. Please extract key text and use Paste Text mode instead.]'});
+      if((f.apiType==='document'||f.apiType==='image')&&f.base64&&b64size<MAX_B64){
+        parts.push({inline_data:{mime_type:f.mediaType||(f.apiType==='document'?'application/pdf':'image/jpeg'),data:f.base64}});
+      }else if(f.apiType==='text'&&f.textContent){
+        parts.push({text:'[File: '+f.name+']\n'+f.textContent});
+      }else if(b64size>=MAX_B64){
+        parts.push({text:'[Note: '+f.name+' was too large to attach. Paste key excerpts in Paste Text mode.]'});
       }
     });
-    userContent.push({type:'text',text:'Based on the course material above for "'+course+'", generate study content at '+diff+' level.\n'+(wantMcq?'Generate '+n+' MCQs with 4 options (A-D), correct answer, and explanation — questions must be from the material.\n':'')+(wantFlash?'Generate '+n+' true/false flashcards with statement, answer, and explanation — from the material.\n':'')+'\n'+jsonFmt});
-    messages=[{role:'user',content:userContent}];
-  } else if(hasPaste){
-    messages=[{role:'user',content:'Course material for "'+course+'":\n\n'+pasteText.slice(0,60000)+'\n\n---\nGenerate study content at '+diff+' level based on this material.\n'+(wantMcq?'Generate '+n+' MCQs with 4 options (A-D), correct answer, and explanation — from the content above.\n':'')+(wantFlash?'Generate '+n+' true/false flashcards — from the content above.\n':'')+'\n'+jsonFmt}];
-  } else {
-    messages=[{role:'user',content:'Generate study materials for the course "'+course+'" at '+diff+' level for Nigerian university students.\n'+(wantMcq?'Generate '+n+' MCQs with 4 options (A-D), correct answer, and explanation.\n':'')+(wantFlash?'Generate '+n+' true/false flashcards with statement, answer, and explanation.\n':'')+'\n'+jsonFmt}];
+  }else if(hasPaste){
+    parts.push({text:'Course material for "'+course+'":\n\n'+pasteText.slice(0,60000)});
   }
+  parts.push({text:prompt});
 
   try{
-    // Build payload - strip base64 from large PDFs if needed to avoid size limits
-    const payload={model:'claude-sonnet-4-20250514',max_tokens:5000,messages};
-
-    // Try the proxied endpoint first (works with proxied endpoints), fall back to direct
-    let res, data;
-    const endpoints=[
-      {url:'https://api.anthropic.com/v1/messages', headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}},
-      {url:'https://api.anthropic.com/v1/messages', headers:{'Content-Type':'application/json'}}
-    ];
-    let lastErr=null;
-    for(const ep of endpoints){
-      try{
-        res=await fetch(ep.url,{method:'POST',headers:ep.headers,body:JSON.stringify(payload)});
-        data=await res.json();
-        if(!data.error)break;
-        lastErr=new Error(data.error.message||JSON.stringify(data.error));
-      }catch(fetchErr){lastErr=fetchErr;}
-    }
-    if(!data||data.error)throw lastErr||new Error('API request failed');
-
-    const raw=data.content.filter(i=>i.type==='text').map(i=>i.text).join('');
-    // Extract JSON - handle cases where model wraps it in markdown
-    const jsonMatch=raw.match(/```json\s*([\s\S]*?)```/)||raw.match(/(\{[\s\S]*\})/);
-    if(!jsonMatch)throw new Error('Could not parse response. Please try again.');
-    const parsed=JSON.parse(jsonMatch[1]||jsonMatch[0]);
-    mcqData=Array.isArray(parsed.mcqs)?parsed.mcqs:[];
-    flashData=Array.isArray(parsed.flashcards)?parsed.flashcards:[];
-    if(!mcqData.length&&!flashData.length)throw new Error('Generation returned empty content. Try rephrasing your topic.');
+    const raw=await callGemini(parts);
+    const parsed=parseGeminiJson(raw);
+    const quiz=normalizeQuiz(parsed,wantMcq,wantFlash);
+    mcqData=quiz.mcqs;flashData=quiz.cards;
+    if(!mcqData.length&&!flashData.length)throw new Error('Gemini returned no questions. Try a more specific topic or add course material.');
     quizAnswered=0;quizCorrect=0;
     renderMCQ();renderFlash();
     if(wantFlash&&!wantMcq)switchAiTab('flash');
-    toast('✓ '+mcqData.length+' MCQs + '+flashData.length+' flashcards '+(hasMaterial?'from your material':'generated'));
+    toast((mcqData.length?mcqData.length+' MCQs':'')+(mcqData.length&&flashData.length?' + ':'')+(flashData.length?flashData.length+' flashcards':'')+' generated');
   }catch(e){
     let userMsg=e.message||'Unknown error';
-    if(userMsg.includes('Failed to fetch')||userMsg.includes('NetworkError')||userMsg.includes('CORS')){
-      userMsg='Network error: The generation service cannot be reached directly from this browser. '+
-        'To use generation, open this file on a local server or use the hosted service.';
+    if(/failed to fetch|networkerror|cors/i.test(userMsg)){
+      userMsg='Could not reach Google Gemini. Check your internet connection, API key restrictions, and that this page is open on a local server.';
     }
     const errHtml='<div class="empty-card" style="padding:2rem;">'
-      +'<div class="empty-icon"></div>'
       +'<p style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--tp);">Generation Failed</p>'
       +'<p style="font-size:12px;color:var(--tm);line-height:1.6;max-width:420px;margin:0 auto;">'+esc(userMsg)+'</p>'
-      +'<button onclick="generateStudyMaterial()" style="margin-top:14px;height:34px;padding:0 16px;background:var(--g700);color:#fff;border:none;border-radius:8px;font-family:var(--f);font-size:12px;font-weight:600;cursor:pointer;">Try Again</button>'
+      +'<button class="gen-btn" onclick="generateStudyMaterial()" style="margin-top:14px;">Try Again</button>'
       +'</div>';
     if(mc)mc.innerHTML=errHtml;if(fc)fc.innerHTML=errHtml;
     console.error('Study gen error:',e);
   }
   btn.disabled=false;
-  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg> Generate';
+  btn.innerHTML=GEN_BTN_HTML;
 }
 function renderMCQ(){
   if(!mcqData.length){$('mcqContent').innerHTML='<div class="empty-card"><div class="empty-icon">📝</div><p>No MCQs generated</p></div>';return;}
@@ -2012,6 +1665,8 @@ function loadAll(){
 
 // ── BOOT ──
 loadAll();
+window.addEventListener('resize',()=>{ if(window.innerWidth>1024) closeSidebar(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSidebar(); });
 </script>
 </body>
 </html>

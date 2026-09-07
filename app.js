@@ -51,22 +51,22 @@ function showView(v){
   const nb=$('nb-'+v);if(nb)nb.classList.add('act');
   if(v==='records')renderRecs();
   if(v==='analytics')renderAnalytics();
+  closeSidebar();
 }
 function openSidebar(){
-  $('sidebar').classList.add('open');
+  document.body.classList.add('menu-open');
   $('mobOv').classList.add('open');
   const b=$('mobBtn'); if(b) b.classList.add('open');
   if(b) b.setAttribute('aria-label','Close menu');
 }
 function closeSidebar(){
-  $('sidebar').classList.remove('open');
+  document.body.classList.remove('menu-open');
   $('mobOv').classList.remove('open');
   const b=$('mobBtn'); if(b) b.classList.remove('open');
   if(b) b.setAttribute('aria-label','Open menu');
 }
 function toggleSidebar(){
-  const sb=$('sidebar'); if(!sb) return;
-  if(sb.classList.contains('open')) closeSidebar(); else openSidebar();
+  if(document.body.classList.contains('menu-open')) closeSidebar(); else openSidebar();
 }
 
 /* ══════════════════════════════════════════
@@ -156,7 +156,17 @@ function liveFooters(){
 function renderSems(){
   const con=$('semsContainer');
   if(!sems.length){
-    con.innerHTML=`<div class="main-empty"><div class="main-empty-icon"></div><h2>No Semesters Yet</h2><p>Click "Add Semester" above to start tracking your academic performance</p></div>`;
+    con.innerHTML=`<div class="main-empty">
+      <div class="main-empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h8"/></svg>
+      </div>
+      <h2>No Semesters Yet</h2>
+      <p>Add your first semester to start tracking GPA and CGPA live.</p>
+      <button class="tbtn green" onclick="addSem()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Semester
+      </button>
+    </div>`;
     return;
   }
   const q=($('searchInp').value||'').toLowerCase();
@@ -176,17 +186,17 @@ function renderSems(){
           const gp=G[c.grade]*c.unit;
           const isWeak=G[c.grade]<weakThresh();
           return `<tr data-cid="${c.id}">
-            <td><input class="cname" value="${esc(c.name)}" placeholder="Course name…" oninput="updCourse(${sem.id},${c.id},'name',this.value)">
+            <td data-label="Course"><input class="cname" value="${esc(c.name)}" placeholder="Course name…" oninput="updCourse(${sem.id},${c.id},'name',this.value)">
             ${isWeak?'<span class="weak-flag">Weak</span>':''}</td>
-            <td><select class="csel" onchange="updCourse(${sem.id},${c.id},'unit',this.value)">
+            <td data-label="Unit"><select class="csel" onchange="updCourse(${sem.id},${c.id},'unit',this.value)">
               ${[1,2,3,4,5,6].map(u=>`<option value="${u}"${c.unit==u?' selected':''}>${u}u</option>`).join('')}
             </select></td>
-            <td><select class="csel" onchange="updCourse(${sem.id},${c.id},'grade',this.value)">
+            <td data-label="Grade"><select class="csel" onchange="updCourse(${sem.id},${c.id},'grade',this.value)">
               ${K.map(g=>`<option value="${g}"${c.grade===g?' selected':''}>${g} (${G[g]})</option>`).join('')}
             </select></td>
-            <td><span class="gp-badge gp${G[c.grade]}">${gp}</span></td>
-            <td style="color:var(--tm);font-size:11px;">${c.unit>0?(gp/c.unit).toFixed(2):'-'}</td>
-            <td><button class="row-del" onclick="delCourse(${sem.id},${c.id})">
+            <td data-label="GP"><span class="gp-badge gp${G[c.grade]}">${gp}</span></td>
+            <td data-label="GP/Unit" style="color:var(--tm);font-size:11px;">${c.unit>0?(gp/c.unit).toFixed(2):'-'}</td>
+            <td data-label=""><button class="row-del" onclick="delCourse(${sem.id},${c.id})">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
             </button></td>
           </tr>`;
@@ -435,7 +445,7 @@ function switchSource(src){
   ['upload','paste','none'].forEach(s=>{
     const btn=$('src'+s.charAt(0).toUpperCase()+s.slice(1));
     const sec=$('sec'+s.charAt(0).toUpperCase()+s.slice(1));
-    if(btn)btn.classList.toggle('act',s===src);
+    if(btn){btn.classList.toggle('act',s===src);btn.setAttribute('aria-selected',s===src?'true':'false');}
     if(sec)sec.classList.toggle('act',s===src);
   });
   updateCtxBadge();
@@ -546,13 +556,96 @@ function renderFilesList(){
   }).join('');
 }
 
-/* ── GENERATION ── */
+/* ── GENERATION (Google Gemini) ── */
+const GEMINI_MODELS=['gemini-2.0-flash','gemini-2.5-flash','gemini-1.5-flash'];
+const GEN_BTN_HTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg> Generate Assessment';
+
+function getGeminiKey(){
+  try{return String((window.__ENV&&(window.__ENV.GEMINI_API_KEY||window.__ENV.GOOGLE_API_KEY))||'').trim();}catch(e){return '';}
+}
+
+function buildStudyPrompt(course,diff,n,wantMcq,wantFlash,hasMaterial){
+  const audience='Nigerian polytechnic and university students';
+  let p='Create an original assessment for the course/topic "'+course+'" at '+diff+' difficulty for '+audience+'.\n';
+  if(hasMaterial)p+='Use ONLY the course material provided. Do not invent facts that are not supported by the material.\n';
+  else p+='Use accurate general knowledge of this topic. Prefer exam-style questions a lecturer might set.\n';
+  if(wantMcq)p+='Generate exactly '+n+' multiple-choice questions. Each must have 4 options labeled A–D, one correct answer letter, and a short explanation.\n';
+  if(wantFlash)p+='Generate exactly '+n+' true/false flashcards. Each must have a statement, boolean answer, and a short explanation.\n';
+  if(!wantMcq)p+='Return "mcqs" as an empty array.\n';
+  if(!wantFlash)p+='Return "flashcards" as an empty array.\n';
+  p+='Return JSON only in this shape: {"mcqs":[{"q":"question","opts":["option A","option B","option C","option D"],"ans":"A","exp":"why"}],"flashcards":[{"statement":"claim","answer":true,"exp":"why"}]}';
+  return p;
+}
+
+function parseGeminiJson(raw){
+  const jsonMatch=String(raw||'').match(/```json\s*([\s\S]*?)```/)||String(raw||'').match(/(\{[\s\S]*\})/);
+  if(!jsonMatch)throw new Error('Gemini did not return valid JSON. Try again.');
+  return JSON.parse(jsonMatch[1]||jsonMatch[0]);
+}
+
+function normalizeQuiz(parsed,wantMcq,wantFlash){
+  let mcqs=Array.isArray(parsed.mcqs)?parsed.mcqs:[];
+  let cards=Array.isArray(parsed.flashcards)?parsed.flashcards:[];
+  mcqs=mcqs.map(q=>{
+    const opts=Array.isArray(q.opts)?q.opts.map(o=>String(o).replace(/^[A-D][.)]\s*/,'' )).slice(0,4):[];
+    while(opts.length<4)opts.push('Option '+(opts.length+1));
+    let ans=String(q.ans||'A').trim().toUpperCase();
+    ans=ans.replace(/[^A-D].*/,'');
+    if(!['A','B','C','D'].includes(ans))ans='A';
+    return{q:String(q.q||'').trim(),opts,ans,exp:String(q.exp||'').trim()};
+  }).filter(q=>q.q);
+  cards=cards.map(f=>{
+    let ans=f.answer;
+    if(typeof ans==='string')ans=/^(true|t|yes|1)$/i.test(ans.trim());
+    return{statement:String(f.statement||'').trim(),answer:!!ans,exp:String(f.exp||'').trim()};
+  }).filter(f=>f.statement);
+  if(!wantMcq)mcqs=[];
+  if(!wantFlash)cards=[];
+  return{mcqs,cards};
+}
+
+async function callGemini(parts){
+  const key=getGeminiKey();
+  if(!key)throw new Error('Add GEMINI_API_KEY to your .env file, then refresh the page.');
+  let lastErr=null;
+  for(const model of GEMINI_MODELS){
+    const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(key);
+    const payload={
+      systemInstruction:{parts:[{text:'You are an exam-prep tutor. Produce original assessment items and valid JSON only.'}]},
+      contents:[{role:'user',parts}],
+      generationConfig:{temperature:0.5,maxOutputTokens:8192,responseMimeType:'application/json'}
+    };
+    let res,data;
+    try{
+      res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      data=await res.json();
+    }catch(err){lastErr=err;continue;}
+    if(data.error){
+      const msg=data.error.message||'Gemini request failed';
+      lastErr=new Error(msg);
+      const low=msg.toLowerCase();
+      if(low.includes('api key')||low.includes('permission denied')||res.status===403||res.status===401)throw lastErr;
+      continue;
+    }
+    const cand=(data.candidates||[])[0];
+    const text=((cand&&cand.content&&cand.content.parts)||[]).map(p=>p.text||'').join('');
+    if(!text){
+      const block=(data.promptFeedback&&data.promptFeedback.blockReason)||(cand&&cand.finishReason);
+      lastErr=new Error(block?'Gemini blocked or stopped the response ('+block+'). Try different material or a shorter topic.':'Empty response from Gemini.');
+      continue;
+    }
+    return text;
+  }
+  throw lastErr||new Error('Gemini request failed');
+}
+
 async function generateStudyMaterial(){
   const course=($('aiCourse').value||'').trim();
   const type=$('aiType').value;
   const diff=$('aiDiff').value;
-  const count=parseInt($('aiCount').value);
+  const count=parseInt($('aiCount').value,10)||10;
   if(!course){toast('Enter a course or topic name first');if($('aiCourse'))$('aiCourse').focus();return;}
+  if(!getGeminiKey()){toast('Add GEMINI_API_KEY to your .env file, then refresh');return;}
 
   const readyFiles=uploadedFiles.filter(f=>f.status==='ready');
   const pasteText=(($('pasteText')&&$('pasteText').value)||'').trim();
@@ -561,9 +654,9 @@ async function generateStudyMaterial(){
   const hasMaterial=hasUpload||hasPaste;
 
   const btn=$('genBtn');if(!btn)return;
-  btn.disabled=true;btn.textContent='Generating…';
+  btn.disabled=true;btn.textContent='Generating with Gemini…';
   const out=$('aiOutput');if(out)out.style.display='block';
-  const loading='<div class="loading-pulse"><div class="pulse-dots"><div class="pulse-dot"></div><div class="pulse-dot"></div><div class="pulse-dot"></div></div><p>'+(hasMaterial?'Reading materials & generating questions…':'Generating questions for "'+course+'"…')+'</p></div>';
+  const loading='<div class="loading-pulse"><div class="pulse-dots"><div class="pulse-dot"></div><div class="pulse-dot"></div><div class="pulse-dot"></div></div><p>'+(hasMaterial?'Reading your materials and generating an assessment…':'Generating a '+diff+' assessment for "'+esc(course)+'"…')+'</p></div>';
   const mc=$('mcqContent');const fc=$('flashContent');
   if(mc){mc.innerHTML=loading;mc.classList.add('act');}
   if(fc){fc.innerHTML=loading;fc.classList.remove('act');}
@@ -573,87 +666,51 @@ async function generateStudyMaterial(){
   const wantMcq=type==='mcq'||type==='both';
   const wantFlash=type==='flash'||type==='both';
   const n=wantMcq&&wantFlash?Math.ceil(count/2):count;
+  const prompt=buildStudyPrompt(course,diff,n,wantMcq,wantFlash,hasMaterial);
 
-  const jsonFmt='Return ONLY valid JSON: {"mcqs":[{"q":"question","opts":["A. option","B. option","C. option","D. option"],"ans":"A","exp":"explanation"}],"flashcards":[{"statement":"statement","answer":true,"exp":"explanation"}]}. Use empty array [] for unrequested sections. NO markdown, ONLY the JSON.';
-
-  let messages=[];
-
+  const parts=[];
+  const MAX_B64=8*1024*1024;
   if(hasUpload){
-    const userContent=[];
-    let totalBase64Bytes=0;
-    const MAX_TOTAL_B64=4*1024*1024; // 4MB base64 limit to avoid payload errors
     readyFiles.forEach(f=>{
       const b64size=f.base64?f.base64.length:0;
-      totalBase64Bytes+=b64size;
-      if(f.apiType==='document'&&b64size<MAX_TOTAL_B64){
-        userContent.push({type:'document',source:{type:'base64',media_type:f.mediaType,data:f.base64}});
-      } else if(f.apiType==='image'&&b64size<MAX_TOTAL_B64){
-        userContent.push({type:'image',source:{type:'base64',media_type:f.mediaType,data:f.base64}});
-      } else if(f.apiType==='text'&&f.textContent){
-        userContent.push({type:'text',text:'[File: '+f.name+']\n'+f.textContent});
-      } else if(f.apiType==='document'&&b64size>=MAX_TOTAL_B64){
-        // PDF too large — fall back to telling user
-        userContent.push({type:'text',text:'[Note: '+f.name+' was too large to include in full. Please extract key text and use Paste Text mode instead.]'});
+      if((f.apiType==='document'||f.apiType==='image')&&f.base64&&b64size<MAX_B64){
+        parts.push({inline_data:{mime_type:f.mediaType||(f.apiType==='document'?'application/pdf':'image/jpeg'),data:f.base64}});
+      }else if(f.apiType==='text'&&f.textContent){
+        parts.push({text:'[File: '+f.name+']\n'+f.textContent});
+      }else if(b64size>=MAX_B64){
+        parts.push({text:'[Note: '+f.name+' was too large to attach. Paste key excerpts in Paste Text mode.]'});
       }
     });
-    userContent.push({type:'text',text:'Based on the course material above for "'+course+'", generate study content at '+diff+' level.\n'+(wantMcq?'Generate '+n+' MCQs with 4 options (A-D), correct answer, and explanation — questions must be from the material.\n':'')+(wantFlash?'Generate '+n+' true/false flashcards with statement, answer, and explanation — from the material.\n':'')+'\n'+jsonFmt});
-    messages=[{role:'user',content:userContent}];
-  } else if(hasPaste){
-    messages=[{role:'user',content:'Course material for "'+course+'":\n\n'+pasteText.slice(0,60000)+'\n\n---\nGenerate study content at '+diff+' level based on this material.\n'+(wantMcq?'Generate '+n+' MCQs with 4 options (A-D), correct answer, and explanation — from the content above.\n':'')+(wantFlash?'Generate '+n+' true/false flashcards — from the content above.\n':'')+'\n'+jsonFmt}];
-  } else {
-    messages=[{role:'user',content:'Generate study materials for the course "'+course+'" at '+diff+' level for Nigerian university students.\n'+(wantMcq?'Generate '+n+' MCQs with 4 options (A-D), correct answer, and explanation.\n':'')+(wantFlash?'Generate '+n+' true/false flashcards with statement, answer, and explanation.\n':'')+'\n'+jsonFmt}];
+  }else if(hasPaste){
+    parts.push({text:'Course material for "'+course+'":\n\n'+pasteText.slice(0,60000)});
   }
+  parts.push({text:prompt});
 
   try{
-    // Build payload - strip base64 from large PDFs if needed to avoid size limits
-    const payload={model:'claude-sonnet-4-20250514',max_tokens:5000,messages};
-
-    // Try the proxied endpoint first (works with proxied endpoints), fall back to direct
-    let res, data;
-    const endpoints=[
-      {url:'https://api.anthropic.com/v1/messages', headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}},
-      {url:'https://api.anthropic.com/v1/messages', headers:{'Content-Type':'application/json'}}
-    ];
-    let lastErr=null;
-    for(const ep of endpoints){
-      try{
-        res=await fetch(ep.url,{method:'POST',headers:ep.headers,body:JSON.stringify(payload)});
-        data=await res.json();
-        if(!data.error)break;
-        lastErr=new Error(data.error.message||JSON.stringify(data.error));
-      }catch(fetchErr){lastErr=fetchErr;}
-    }
-    if(!data||data.error)throw lastErr||new Error('API request failed');
-
-    const raw=data.content.filter(i=>i.type==='text').map(i=>i.text).join('');
-    // Extract JSON - handle cases where model wraps it in markdown
-    const jsonMatch=raw.match(/```json\s*([\s\S]*?)```/)||raw.match(/(\{[\s\S]*\})/);
-    if(!jsonMatch)throw new Error('Could not parse response. Please try again.');
-    const parsed=JSON.parse(jsonMatch[1]||jsonMatch[0]);
-    mcqData=Array.isArray(parsed.mcqs)?parsed.mcqs:[];
-    flashData=Array.isArray(parsed.flashcards)?parsed.flashcards:[];
-    if(!mcqData.length&&!flashData.length)throw new Error('Generation returned empty content. Try rephrasing your topic.');
+    const raw=await callGemini(parts);
+    const parsed=parseGeminiJson(raw);
+    const quiz=normalizeQuiz(parsed,wantMcq,wantFlash);
+    mcqData=quiz.mcqs;flashData=quiz.cards;
+    if(!mcqData.length&&!flashData.length)throw new Error('Gemini returned no questions. Try a more specific topic or add course material.');
     quizAnswered=0;quizCorrect=0;
     renderMCQ();renderFlash();
     if(wantFlash&&!wantMcq)switchAiTab('flash');
-    toast('✓ '+mcqData.length+' MCQs + '+flashData.length+' flashcards '+(hasMaterial?'from your material':'generated'));
+    toast((mcqData.length?mcqData.length+' MCQs':'')+(mcqData.length&&flashData.length?' + ':'')+(flashData.length?flashData.length+' flashcards':'')+' generated');
   }catch(e){
     let userMsg=e.message||'Unknown error';
-    if(userMsg.includes('Failed to fetch')||userMsg.includes('NetworkError')||userMsg.includes('CORS')){
-      userMsg='Network error: The generation service cannot be reached directly from this browser. '+
-        'To use generation, open this file on a local server or use the hosted service.';
+    if(/failed to fetch|networkerror|cors/i.test(userMsg)){
+      userMsg='Could not reach Google Gemini. Check your internet connection, API key restrictions, and that this page is open on a local server.';
     }
     const errHtml='<div class="empty-card" style="padding:2rem;">'
-      +'<div class="empty-icon"></div>'
       +'<p style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--tp);">Generation Failed</p>'
       +'<p style="font-size:12px;color:var(--tm);line-height:1.6;max-width:420px;margin:0 auto;">'+esc(userMsg)+'</p>'
-      +'<button onclick="generateStudyMaterial()" style="margin-top:14px;height:34px;padding:0 16px;background:var(--g700);color:#fff;border:none;border-radius:8px;font-family:var(--f);font-size:12px;font-weight:600;cursor:pointer;">Try Again</button>'
+      +'<button class="gen-btn" onclick="generateStudyMaterial()" style="margin-top:14px;">Try Again</button>'
       +'</div>';
     if(mc)mc.innerHTML=errHtml;if(fc)fc.innerHTML=errHtml;
     console.error('Study gen error:',e);
   }
   btn.disabled=false;
-  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg> Generate';
+  btn.innerHTML=GEN_BTN_HTML;
 }
 function renderMCQ(){
   if(!mcqData.length){$('mcqContent').innerHTML='<div class="empty-card"><div class="empty-icon"></div><p>No MCQs generated</p></div>';return;}
@@ -1311,3 +1368,5 @@ function loadAll(){
 
 // ── BOOT ──
 loadAll();
+window.addEventListener('resize',()=>{ if(window.innerWidth>1024) closeSidebar(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSidebar(); });
